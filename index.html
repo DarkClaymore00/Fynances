@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fynance - Gerenciador de Despesas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Ícones: Material Symbols no lugar do Font Awesome */
+        .fa-solid, .fa-regular { display:inline-block; width:1em; height:1em; overflow:hidden; white-space:nowrap; line-height:1; vertical-align:-0.125em; font-style:normal; }
+        .fa-solid::before, .fa-regular::before { font-family:'Material Symbols Outlined'; font-weight:normal; font-size:1em; line-height:1; letter-spacing:normal; text-transform:none; white-space:nowrap; -webkit-font-feature-settings:'liga'; font-feature-settings:'liga'; -webkit-font-smoothing:antialiased; }
+        .fa-credit-card::before{content:'credit_card';}
+        .fa-circle-info::before{content:'info';}
+        .fa-circle-check::before{content:'check_circle';}
+        .fa-xmark::before{content:'close';}
+        .fa-tags::before{content:'sell';}
+        .fa-tag::before{content:'sell';}
+        .fa-receipt::before{content:'receipt_long';}
+        .fa-house::before{content:'home';}
+        .fa-clock::before{content:'schedule';}
+        .fa-triangle-exclamation::before{content:'warning';}
+        .fa-trash-can::before{content:'delete';}
+        .fa-shield-halved::before{content:'shield';}
+        .fa-plus::before{content:'add';}
+        .fa-plus-circle::before{content:'add_circle';}
+        .fa-circle-exclamation::before{content:'error';}
+        .fa-calendar-days::before{content:'calendar_month';}
+        .fa-wallet::before{content:'account_balance_wallet';}
+        .fa-utensils::before{content:'restaurant';}
+        .fa-sliders::before{content:'tune';}
+        .fa-right-from-bracket::before{content:'logout';}
+        .fa-piggy-bank::before{content:'savings';}
+        .fa-pen-to-square::before{content:'edit_square';}
+        .fa-list::before{content:'list';}
+        .fa-lightbulb::before{content:'lightbulb';}
+        .fa-hand-holding-dollar::before{content:'payments';}
+        .fa-graduation-cap::before{content:'school';}
+        .fa-gamepad::before{content:'sports_esports';}
+        .fa-circle::before{content:'circle';}
+        .fa-chevron-right::before{content:'chevron_right';}
+        .fa-chevron-left::before{content:'chevron_left';}
+        .fa-chart-pie::before{content:'pie_chart';}
+        .fa-chart-line::before{content:'show_chart';}
+        .fa-bus::before{content:'directions_bus';}
+        /* Custom scrollbar & interactive polish */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .calendar-day-active { box-shadow: inset 0 0 0 2px #0284c7; }
+        :focus-visible { outline: 3px solid #38bdf8; outline-offset: 2px; }
+        .help-hint { color: #64748b; font-size: .75rem; line-height: 1.45; margin-top: .35rem; }
+        .field-error { color: #be123c; font-size: .75rem; margin-top: .35rem; }
+        .nav-btn[aria-current="page"] { background: #0284c7; color: white; }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+    </style>
+</head>
+<body class="h-full text-slate-800 antialiased flex flex-col min-h-screen">
+
+    <div id="toast-container" role="status" aria-live="polite" aria-atomic="false" class="fixed top-5 right-5 z-[60] flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <div id="auth-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 transform transition-all">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-100 text-brand-600 mb-3">
+                    <i class="fa-solid fa-wallet text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900" id="auth-title">Entrar no Fynance</h2>
+                <p class="text-sm text-slate-500 mt-1" id="auth-subtitle">Protótipo acadêmico de gerenciamento financeiro</p>
+            </div>
+
+            <div class="mb-5 p-3.5 bg-sky-50 border border-sky-200 rounded-xl text-xs text-sky-900 shadow-sm">
+                <div class="flex items-center gap-2 font-bold mb-1 text-sky-900">
+                    <i class="fa-solid fa-circle-info text-sky-600 text-sm"></i> Credenciais de Acesso de Teste:
+                </div>
+                <p class="text-slate-600 mb-2">Utilize os dados abaixo para acessar o protótipo:</p>
+                <div class="flex items-center justify-around bg-white p-2.5 rounded-lg border border-sky-100 font-mono text-slate-800 text-xs shadow-inner">
+                    <div>Usuário: <strong class="text-brand-600 bg-slate-100 px-1.5 py-0.5 rounded">usuario123</strong></div>
+                    <div>Senha: <strong class="text-brand-600 bg-slate-100 px-1.5 py-0.5 rounded">123456</strong></div>
+                </div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="form-login" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Usuário ou E-mail</label>
+                    <input type="text" id="login-email" name="username" autocomplete="username" required value="usuario123" placeholder="usuario123" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Senha</label>
+                    <input type="password" id="login-password" name="password" autocomplete="current-password" required value="123456" placeholder="123456" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm transition-all">
+                </div>
+                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+                    Acessar Conta
+                </button>
+                <div class="text-center pt-2">
+                    <button type="button" id="btn-toggle-auth" class="text-xs text-brand-600 hover:text-brand-700 font-medium hover:underline">
+                        Não tem uma conta? Cadastre-se gratuitamente
+                    </button>
+                </div>
+            </form>
+
+            <!-- Register Form (hidden by default) -->
+            <form id="form-register" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Nome Completo</label>
+                    <input type="text" id="reg-name" required placeholder="Nome do Estudante" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">E-mail</label>
+                    <input type="email" id="reg-email" required placeholder="aluno@universidade.edu.br" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Senha</label>
+                    <input type="password" id="reg-password" required placeholder="Mínimo 6 caracteres" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Renda Mensal (R$)</label>
+                        <input type="number" step="0.01" id="reg-income" value="3500.00" required class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Limite Cartão (R$)</label>
+                        <input type="number" step="0.01" id="reg-card-limit" value="2000.00" required class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none text-sm">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition-all">
+                    Criar Conta
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <header class="bg-slate-900 text-white sticky top-0 z-30 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="bg-brand-500 p-2 rounded-xl text-white flex items-center justify-center">
+                        <i class="fa-solid fa-chart-line text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-lg tracking-tight">Fynance</span>
+                        <span class="text-xs bg-slate-800 text-brand-300 border border-slate-700 px-2 py-0.5 rounded-full ml-2">Protótipo</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="hidden md:flex space-x-1 bg-slate-800 p-1 rounded-xl">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-600 text-white">
+                        <i class="fa-solid fa-house mr-1.5"></i>Visão Geral
+                    </button>
+                    <button onclick="switchTab('transactions')" id="nav-transactions" class="nav-btn px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-all">
+                        <i class="fa-solid fa-receipt mr-1.5"></i>Despesas e Dívidas
+                    </button>
+                    <button onclick="switchTab('calendar')" id="nav-calendar" class="nav-btn px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-all">
+                        <i class="fa-solid fa-calendar-days mr-1.5"></i>Calendário
+                    </button>
+                    <button onclick="switchTab('credit')" id="nav-credit" class="nav-btn px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-all">
+                        <i class="fa-solid fa-credit-card mr-1.5"></i>Cartão de Crédito
+                    </button>
+                    <button onclick="switchTab('categories')" id="nav-categories" class="nav-btn px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-all">
+                        <i class="fa-solid fa-tags mr-1.5"></i>Categorias
+                    </button>
+                </nav>
+
+                <!-- User Profile & Action -->
+                <div class="flex items-center gap-3">
+                    <div class="text-right hidden sm:block">
+                        <p id="user-display-name" class="text-sm font-semibold leading-none">Carregando...</p>
+                        <p id="user-display-email" class="text-xs text-slate-400 mt-1">...</p>
+                    </div>
+                    <button onclick="logout()" title="Sair da Conta" class="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition-all">
+                        <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Bottom Nav bar -->
+        <div class="md:hidden bg-slate-800 border-t border-slate-700 flex justify-around p-2 text-xs">
+            <button onclick="switchTab('dashboard')" class="flex flex-col items-center py-1 text-brand-400">
+                <i class="fa-solid fa-house text-base mb-1"></i>Início
+            </button>
+            <button onclick="switchTab('transactions')" class="flex flex-col items-center py-1 text-slate-400">
+                <i class="fa-solid fa-receipt text-base mb-1"></i>Despesas
+            </button>
+            <button onclick="switchTab('calendar')" class="flex flex-col items-center py-1 text-slate-400">
+                <i class="fa-solid fa-calendar-days text-base mb-1"></i>Agenda
+            </button>
+            <button onclick="switchTab('credit')" class="flex flex-col items-center py-1 text-slate-400">
+                <i class="fa-solid fa-credit-card text-base mb-1"></i>Cartão
+            </button>
+            <button onclick="switchTab('categories')" class="flex flex-col items-center py-1 text-slate-400">
+                <i class="fa-solid fa-tags text-base mb-1"></i>Tags
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- SECTION 1: DASHBOARD VIEW -->
+        <section id="tab-dashboard" class="space-y-6">
+            <div class="rounded-2xl border border-sky-200 bg-sky-50 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                <div class="flex gap-3">
+                    <span class="w-10 h-10 shrink-0 rounded-xl bg-white text-sky-700 flex items-center justify-center"><i class="fa-solid fa-lightbulb"></i></span>
+                    <div><h2 class="font-bold text-slate-900">Seu resumo financeiro</h2><p class="text-sm text-slate-600 mt-1">Acompanhe sua renda, despesas e limite de crédito em um só lugar. Os valores são atualizados quando você registra ou altera um lançamento.</p></div>
+                </div>
+                <button onclick="openTransactionModal()" class="shrink-0 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4 py-2"><i class="fa-solid fa-plus mr-1"></i> Registrar despesa</button>
+            </div>
+            <!-- Summary Header Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Renda Mensal Card -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Renda Mensal</p>
+                            <h3 id="dash-income" class="text-2xl font-bold text-emerald-600 mt-1">R$ 0,00</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
+                        </div>
+                    </div>
+                    <button onclick="openIncomeModal()" class="mt-3 text-xs text-brand-600 font-medium hover:underline flex items-center gap-1">
+                        <i class="fa-solid fa-pen-to-square"></i> Ajustar renda
+                    </button>
+                </div>
+
+                <!-- Despesas Pagas -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Despesas Liquidadas</p>
+                            <h3 id="dash-paid-expenses" class="text-2xl font-bold text-slate-800 mt-1">R$ 0,00</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                    </div>
+                    <p class="mt-3 text-xs text-slate-400">Contas já pagas este mês</p>
+                </div>
+
+                <!-- Dívidas Pendentes / A Pagar -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Dívidas Pendentes</p>
+                            <h3 id="dash-pending-debts" class="text-2xl font-bold text-rose-600 mt-1">R$ 0,00</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                    </div>
+                    <p id="dash-pending-count" class="mt-3 text-xs text-rose-500 font-medium">0 pendências ativas</p>
+                </div>
+
+                <!-- Saldo Previsto -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Saldo Livre Previsto</p>
+                            <h3 id="dash-free-balance" class="text-2xl font-bold text-brand-600 mt-1">R$ 0,00</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-piggy-bank"></i>
+                        </div>
+                    </div>
+                    <p class="mt-3 text-xs text-slate-500">Após quitar todas as despesas</p>
+                </div>
+            </div>
+
+            <!-- Dashboard Middle Row: Credit Quick Widget + Recent Activity -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Credit Card Limit Overview -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-credit-card text-brand-600"></i> Limite de Crédito
+                            </h4>
+                            <span id="credit-status-badge" class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">Normal</span>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-500">Fatura Atual (Gasto)</span>
+                                <span id="dash-credit-used" class="font-bold text-slate-800">R$ 0,00</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                                <div id="dash-credit-bar" class="bg-brand-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                            <div class="flex justify-between text-xs text-slate-500">
+                                <span>Disponível: <strong id="dash-credit-avail" class="text-emerald-600">R$ 0,00</strong></span>
+                                <span>Limite Total: <strong id="dash-credit-limit">R$ 0,00</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex gap-2">
+                        <button onclick="switchTab('credit')" class="w-full text-center py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-all">
+                            Gerenciar Limite
+                        </button>
+                        <button onclick="openTransactionModal('Cartão de Crédito')" class="w-full text-center py-2 px-3 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg transition-all">
+                            + Compra no Cartão
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions Summary -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-list text-brand-600"></i> Últimos Lançamentos
+                        </h4>
+                        <button onclick="switchTab('transactions')" class="text-xs text-brand-600 hover:underline font-semibold">Ver todos</button>
+                    </div>
+
+                    <div id="dashboard-recent-list" class="space-y-3 overflow-y-auto max-h-[220px] pr-1">
+                        <!-- Populated via JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: TRANSACTIONS & DEBTS -->
+        <section id="tab-transactions" class="space-y-6 hidden">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"><i class="fa-solid fa-circle-info text-brand-600 mr-2"></i>Use a busca para localizar um lançamento. Os filtros podem ser combinados; selecione “Todos” para voltar a exibir todos os registros.</div>
+            <!-- Action Toolbar -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+                <!-- Search & Filters -->
+                <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                    <input type="text" id="filter-search" oninput="renderTransactions()" aria-label="Buscar despesa por descrição" placeholder="Buscar por descrição..." class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none w-full sm:w-48">
+                    
+                    <select id="filter-status" onchange="renderTransactions()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                        <option value="all">Todos Status</option>
+                        <option value="pending">Apenas Pendentes (Dívidas)</option>
+                        <option value="paid">Apenas Pagos</option>
+                    </select>
+
+                    <select id="filter-payment" onchange="renderTransactions()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                        <option value="all">Todas Formas Pagamento</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        <option value="PIX">PIX</option>
+                        <option value="Boleto">Boleto</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Débito">Débito</option>
+                    </select>
+                </div>
+
+                <!-- Add Button -->
+                <button onclick="openTransactionModal()" class="w-full md:w-auto bg-brand-600 hover:bg-brand-700 text-white font-semibold px-4 py-2 rounded-lg text-sm flex items-center justify-center gap-2 shadow-sm transition-all">
+                    <i class="fa-solid fa-plus"></i> Nova Despesa / Dívida
+                </button>
+            </div>
+
+            <!-- Transactions Table Container -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="p-4">Descrição</th>
+                                <th class="p-4">Categoria</th>
+                                <th class="p-4">Forma Pagamento</th>
+                                <th class="p-4">Vencimento</th>
+                                <th class="p-4">Valor (R$)</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-table-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="empty-transactions-state" class="p-8 text-center hidden">
+                    <i class="fa-solid fa-receipt text-4xl text-slate-300 mb-2"></i>
+                    <p class="text-slate-500 font-medium">Nenhuma despesa ou dívida encontrada.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: CALENDAR VIEW -->
+        <section id="tab-calendar" class="space-y-6 hidden">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <!-- Calendar Header Navigation -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <h3 id="calendar-month-year" class="text-xl font-bold text-slate-900">Mês Ano</h3>
+                        <span class="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">Visão Financeira</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="changeCalendarMonth(-1)" class="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-600">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <button onclick="resetCalendarToCurrent()" class="px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-700">
+                            Hoje
+                        </button>
+                        <button onclick="changeCalendarMonth(1)" class="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-600">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Days of Week Header -->
+                <div class="grid grid-cols-7 gap-1 text-center font-semibold text-xs text-slate-400 uppercase tracking-wider mb-2">
+                    <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                </div>
+
+                <!-- Calendar Grid Cells -->
+                <div id="calendar-grid" class="grid grid-cols-7 gap-2 min-h-[360px]">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Day Details Popup Panel -->
+            <div id="calendar-day-details" class="bg-slate-900 text-white p-5 rounded-2xl hidden shadow-lg">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 id="calendar-detail-date" class="font-bold text-base text-brand-300">Compromissos do Dia</h4>
+                    <button onclick="closeDayDetails()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div id="calendar-detail-list" class="space-y-2 text-sm">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: CREDIT CARD LIMIT CHECKER -->
+        <section id="tab-credit" class="space-y-6 hidden">
+            <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-brand-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl">
+                <div class="max-w-3xl">
+                    <span class="text-xs font-semibold tracking-wider uppercase text-brand-400">Módulo de Crédito</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold mt-1">Gestor do Limite de Cartão</h2>
+                    <p class="text-slate-300 text-sm mt-2">Monitore o total acumulado em compras no cartão e evite estouros e juros abusivos.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Limit Controls -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-brand-600"></i> Configurar Limite
+                    </h3>
+                    <form id="form-update-limit" onsubmit="saveNewCardLimit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Limite Total do Cartão (R$)</label>
+                            <input type="number" step="0.01" id="input-card-limit" min="0" step="0.01" required aria-describedby="limit-help" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+                            <p id="limit-help" class="help-hint">Informe o valor total disponibilizado pelo banco. O limite disponível será calculado automaticamente com base nas compras registradas.</p>
+                        </div>
+                        <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2 rounded-lg text-sm transition-all">
+                            Atualizar Limite
+                        </button>
+                    </form>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500 space-y-2">
+                        <p><i class="fa-solid fa-circle-info text-brand-500 mr-1"></i> <strong>Dica de Economia:</strong> Recomendamos não comprometer mais de 30% da sua renda em limite de crédito.</p>
+                    </div>
+                </div>
+
+                <!-- Limit Gauge & Breakdown -->
+                <div class="md:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-800 mb-6 flex items-center justify-between">
+                            <span><i class="fa-solid fa-chart-pie text-brand-600 mr-2"></i>Status da Fatura</span>
+                            <span id="credit-gauge-percent" class="text-xl font-black text-brand-600">0%</span>
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1 text-slate-600">
+                                    <span>Consumido: <span id="credit-gauge-used" class="text-rose-600">R$ 0,00</span></span>
+                                    <span>Limite Total: <span id="credit-gauge-total">R$ 0,00</span></span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden p-0.5 border border-slate-200">
+                                    <div id="credit-gauge-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p class="text-xs text-slate-500 font-semibold uppercase">Limite Disponível</p>
+                                    <p id="credit-gauge-free" class="text-lg font-bold text-emerald-600 mt-1">R$ 0,00</p>
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p class="text-xs text-slate-500 font-semibold uppercase">Compras Pendentes (Cartão)</p>
+                                    <p id="credit-pending-card" class="text-lg font-bold text-amber-600 mt-1">R$ 0,00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alert message container -->
+                    <div id="credit-alert-box" class="mt-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-3">
+                        <i class="fa-solid fa-shield-halved text-emerald-600 text-lg"></i>
+                        <span>Seu limite de cartão de crédito está em um nível seguro de utilização.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: CATEGORIES MANAGEMENT -->
+        <section id="tab-categories" class="space-y-6 hidden">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Create Category Form -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-brand-600"></i> Criar Categoria
+                    </h3>
+                    <form id="form-add-category" onsubmit="handleAddCategory(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nome da Categoria</label>
+                            <input type="text" id="cat-name" required placeholder="Ex: Faculdade, Streaming..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Cor do Indicador</label>
+                            <div class="flex items-center gap-3">
+                                <input type="color" id="cat-color" value="#0284c7" class="w-10 h-10 rounded-lg cursor-pointer border border-slate-300">
+                                <span class="text-xs text-slate-500">Escolha uma cor para diferenciar nos relatórios</span>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2 rounded-lg text-sm transition-all shadow-sm">
+                            Salvar Categoria
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Existing Categories List -->
+                <div class="md:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-tags text-brand-600"></i> Categorias Cadastradas
+                    </h3>
+                    <div id="categories-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL: Add/Edit Transaction -->
+    <div id="modal-transaction" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 transform transition-all">
+            <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-lg text-slate-900" id="trans-modal-title">Cadastrar Despesa / Dívida</h3>
+                <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="form-transaction" onsubmit="handleSaveTransaction(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Descrição / Nome do Gasto</label>
+                    <input type="text" id="trans-title" required placeholder="Ex: Mensalidade da Faculdade, Supermercado" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Valor (R$)</label>
+                        <input type="number" min="0.01" step="0.01" id="trans-amount" required placeholder="Ex.: 125,90" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Data de Vencimento</label>
+                        <input type="date" id="trans-date" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                </div>
+
+                <p class="help-hint">Dica: informe um nome fácil de reconhecer, confira o valor e escolha a data de vencimento correta. Campos com * são obrigatórios.</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Categoria</label>
+                        <select id="trans-category" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Forma de Pagamento</label>
+                        <select id="trans-payment" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                            <option value="Cartão de Crédito">Cartão de Crédito</option>
+                            <option value="PIX">PIX</option>
+                            <option value="Boleto">Boleto Bancário</option>
+                            <option value="Dinheiro">Dinheiro Espécie</option>
+                            <option value="Débito">Cartão de Débito</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Status da Dívida/Despesa</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2 p-2.5 border rounded-lg cursor-pointer hover:bg-slate-50 transition-all">
+                            <input type="radio" name="trans-status" value="pending" checked class="text-brand-600 focus:ring-brand-500">
+                            <span class="text-xs font-semibold text-rose-600"><i class="fa-solid fa-clock mr-1"></i> Pendente (A Pagar)</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2.5 border rounded-lg cursor-pointer hover:bg-slate-50 transition-all">
+                            <input type="radio" name="trans-status" value="paid" class="text-brand-600 focus:ring-brand-500">
+                            <span class="text-xs font-semibold text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i> Já Pago</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2">
+                    <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 font-semibold hover:bg-slate-50">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-semibold shadow-md">Salvar Lançamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Update Income -->
+    <div id="modal-income" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 transform transition-all">
+            <h3 class="font-bold text-lg text-slate-900 mb-4">Atualizar Renda Mensal</h3>
+            <form onsubmit="handleSaveIncome(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Sua Renda / Salário (R$)</label>
+                    <input type="number" step="0.01" id="input-modal-income" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeIncomeModal()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-brand-600 text-white rounded-lg text-xs font-semibold">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Default Mock Categories for Academic Demo
+        const DEFAULT_CATEGORIES = [
+            { id: 'cat-1', name: 'Alimentação', color: '#f59e0b', icon: 'fa-utensils' },
+            { id: 'cat-2', name: 'Moradia / Contas', color: '#ef4444', icon: 'fa-house' },
+            { id: 'cat-3', name: 'Educação / Faculdade', color: '#0284c7', icon: 'fa-graduation-cap' },
+            { id: 'cat-4', name: 'Transporte', color: '#8b5cf6', icon: 'fa-bus' },
+            { id: 'cat-5', name: 'Lazer e Esportes', color: '#10b981', icon: 'fa-gamepad' }
+        ];
+
+        // Default Transactions Mockup Data
+        const DEFAULT_TRANSACTIONS = [
+            { id: 't-1', title: 'Mensalidade Faculdade', amount: 850.00, dueDate: '2026-09-10', categoryId: 'cat-3', paymentMethod: 'Boleto', status: 'paid' },
+            { id: 't-2', title: 'Supermercado Mensal', amount: 420.50, dueDate: '2026-09-15', categoryId: 'cat-1', paymentMethod: 'Cartão de Crédito', status: 'pending' },
+            { id: 't-3', title: 'Internet Fibra', amount: 119.90, dueDate: '2026-09-20', categoryId: 'cat-2', paymentMethod: 'PIX', status: 'pending' },
+            { id: 't-4', title: 'Assinatura Streaming', amount: 39.90, dueDate: '2026-09-05', categoryId: 'cat-5', paymentMethod: 'Cartão de Crédito', status: 'paid' }
+        ];
+
+        // Global State Manager
+        let state = {
+            currentUser: null,
+            categories: [],
+            transactions: [],
+            calendarDate: new Date(),
+            activeTab: 'dashboard'
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadApplicationData();
+            setupEventListeners();
+            
+            // Check if user is logged in
+            if (!state.currentUser) {
+                document.getElementById('auth-modal').classList.remove('hidden');
+            } else {
+                document.getElementById('auth-modal').classList.add('hidden');
+                updateUserUI();
+                renderAll();
+            }
+        });
+
+        function loadApplicationData() {
+            let savedUser = null, savedCat = null, savedTrans = null;
+            try {
+                savedUser = localStorage.getItem('finantrack_user');
+                savedCat = localStorage.getItem('finantrack_categories');
+                savedTrans = localStorage.getItem('finantrack_transactions');
+            } catch (e) {}
+            const parse = (v, fb) => { try { return v ? JSON.parse(v) : fb; } catch (e) { return fb; } };
+            state.currentUser = parse(savedUser, null);
+            state.categories = parse(savedCat, DEFAULT_CATEGORIES);
+            state.transactions = parse(savedTrans, DEFAULT_TRANSACTIONS);
+        }
+
+        function saveData() {
+            try {
+                if (state.currentUser) {
+                    localStorage.setItem('finantrack_user', JSON.stringify(state.currentUser));
+                }
+                localStorage.setItem('finantrack_categories', JSON.stringify(state.categories));
+                localStorage.setItem('finantrack_transactions', JSON.stringify(state.transactions));
+            } catch (error) {
+                showToast('Não foi possível salvar os dados neste navegador. Verifique o espaço disponível ou as permissões.', 'error');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgColors = {
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-rose-600 text-white',
+                warning: 'bg-amber-500 text-white',
+                info: 'bg-slate-800 text-white'
+            };
+
+            const icons = {
+                success: 'fa-circle-check',
+                error: 'fa-triangle-exclamation',
+                warning: 'fa-circle-exclamation',
+                info: 'fa-circle-info'
+            };
+
+            toast.className = `p-4 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto ${bgColors[type] || bgColors.info}`;
+            const icon = document.createElement('i');
+            icon.className = `fa-solid ${icons[type] || icons.info} text-lg`;
+            icon.setAttribute('aria-hidden', 'true');
+            const label = document.createElement('span');
+            label.className = 'flex-grow';
+            label.textContent = message;
+            const close = document.createElement('button');
+            close.type = 'button'; close.className = 'opacity-70 hover:opacity-100';
+            close.setAttribute('aria-label', 'Fechar mensagem');
+            close.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+            close.addEventListener('click', () => toast.remove());
+            toast.append(icon, label, close);
+
+            container.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Auto dismiss
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function setupEventListeners() {
+            // Auth Toggle
+            const toggleBtn = document.getElementById('btn-toggle-auth');
+            const loginForm = document.getElementById('form-login');
+            const regForm = document.getElementById('form-register');
+            const authTitle = document.getElementById('auth-title');
+
+            toggleBtn.addEventListener('click', () => {
+                const isLogin = !loginForm.classList.contains('hidden');
+                if (isLogin) {
+                    loginForm.classList.add('hidden');
+                    regForm.classList.remove('hidden');
+                    authTitle.textContent = 'Criar Conta Acadêmica';
+                    toggleBtn.textContent = 'Já possui conta? Faça Login';
+                } else {
+                    regForm.classList.add('hidden');
+                    loginForm.classList.remove('hidden');
+                    authTitle.textContent = 'Entrar no Fynance';
+                    toggleBtn.textContent = 'Não tem uma conta? Cadastre-se gratuitamente';
+                }
+            });
+
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const userInput = document.getElementById('login-email').value.trim();
+                const password = document.getElementById('login-password').value;
+                if (!userInput || !password) { showToast('Informe o usuário e a senha para continuar.', 'error'); return; }
+                state.currentUser = {
+                    name: userInput || 'usuario123',
+                    email: userInput.includes('@') ? userInput : `${userInput}@fynance.com`,
+                    income: 3500.00,
+                    creditLimit: 2000.00
+                };
+                saveData();
+                document.getElementById('auth-modal').classList.add('hidden');
+                updateUserUI();
+                renderAll();
+                showToast(`Bem-vindo ao Fynance, ${state.currentUser.name}!`, 'success');
+            });
+
+            // Register Submit
+            regForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('reg-name').value;
+                const email = document.getElementById('reg-email').value;
+                const income = parseFloat(document.getElementById('reg-income').value) || 0;
+                const creditLimit = parseFloat(document.getElementById('reg-card-limit').value);
+                if (!name.trim() || !email.trim() || income < 0 || !Number.isFinite(income) || creditLimit < 0 || !Number.isFinite(creditLimit) || document.getElementById('reg-password').value.length < 6) {
+                    showToast('Confira os dados: senha com pelo menos 6 caracteres e valores iguais ou maiores que zero.', 'error'); return;
+                }
+                state.currentUser = { name: name.trim(), email: email.trim(), income, creditLimit };
+                saveData();
+                document.getElementById('auth-modal').classList.add('hidden');
+                updateUserUI();
+                renderAll();
+                showToast('Conta criada com sucesso!', 'success');
+            });
+        }
+
+        function logout() {
+            try { localStorage.removeItem('finantrack_user'); } catch (e) {}
+            state.currentUser = null;
+            document.getElementById('auth-modal').classList.remove('hidden');
+            showToast('Você encerrou a sessão.', 'info');
+        }
+
+        function updateUserUI() {
+            if (!state.currentUser) return;
+            document.getElementById('user-display-name').textContent = state.currentUser.name;
+            document.getElementById('user-display-email').textContent = state.currentUser.email;
+            document.getElementById('input-card-limit').value = state.currentUser.creditLimit;
+        }
+
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+            
+            // Hide all tabs
+            ['dashboard', 'transactions', 'calendar', 'credit', 'categories'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                const navBtn = document.getElementById(`nav-${t}`);
+                if (navBtn) {
+                    navBtn.classList.remove('bg-brand-600', 'text-white');
+                    navBtn.classList.add('text-slate-300');
+                    navBtn.setAttribute('aria-current', 'false');
+                }
+            });
+
+            // Show selected
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.add('bg-brand-600', 'text-white');
+                activeNav.classList.remove('text-slate-300');
+                activeNav.setAttribute('aria-current', 'page');
+            }
+            document.querySelectorAll('header nav button, header > div + div button').forEach(btn => {
+                const isActive = (btn.getAttribute('onclick') || '').includes(`'${tabId}'`);
+                btn.classList.toggle('text-brand-400', isActive);
+                btn.classList.toggle('text-slate-400', !isActive);
+                if (btn.closest('nav')) btn.setAttribute('aria-current', isActive ? 'page' : 'false');
+            });
+            renderAll();
+        }
+
+        function renderAll() {
+            renderDashboard();
+            renderTransactions();
+            renderCalendar();
+            renderCreditLimitView();
+            renderCategories();
+        }
+
+        // Escape dados fornecidos pelo usuário antes de inseri-los em HTML dinâmico.
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+        }
+
+        function formatBRL(amount) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount || 0);
+        }
+
+        function formatDateBR(dateString) {
+            if (!dateString) return '-';
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        }
+
+        function renderDashboard() {
+            if (!state.currentUser) return;
+
+            const income = state.currentUser.income || 0;
+            const limit = state.currentUser.creditLimit || 0;
+
+            const totalPaid = state.transactions
+                .filter(t => t.status === 'paid')
+                .reduce((acc, t) => acc + t.amount, 0);
+
+            const pendingDebts = state.transactions.filter(t => t.status === 'pending');
+            const totalPending = pendingDebts.reduce((acc, t) => acc + t.amount, 0);
+
+            const freeBalance = income - (totalPaid + totalPending);
+
+            // Credit card used total
+            const creditUsed = state.transactions
+                .filter(t => t.paymentMethod === 'Cartão de Crédito')
+                .reduce((acc, t) => acc + t.amount, 0);
+
+            // Update DOM Elements
+            document.getElementById('dash-income').textContent = formatBRL(income);
+            document.getElementById('dash-paid-expenses').textContent = formatBRL(totalPaid);
+            document.getElementById('dash-pending-debts').textContent = formatBRL(totalPending);
+            document.getElementById('dash-pending-count').textContent = `${pendingDebts.length} pendência(s) ativa(s)`;
+            
+            const freeBalanceEl = document.getElementById('dash-free-balance');
+            freeBalanceEl.textContent = formatBRL(freeBalance);
+            freeBalanceEl.className = `text-2xl font-bold mt-1 ${freeBalance < 0 ? 'text-rose-600' : 'text-brand-600'}`;
+
+            // Credit Card Widget Updates
+            document.getElementById('dash-credit-used').textContent = formatBRL(creditUsed);
+            document.getElementById('dash-credit-limit').textContent = formatBRL(limit);
+            
+            const availCredit = Math.max(0, limit - creditUsed);
+            document.getElementById('dash-credit-avail').textContent = formatBRL(availCredit);
+
+            const creditPercent = limit > 0 ? Math.min(100, (creditUsed / limit) * 100) : 0;
+            const creditBar = document.getElementById('dash-credit-bar');
+            creditBar.style.width = `${creditPercent}%`;
+            
+            const badge = document.getElementById('credit-status-badge');
+            if (creditPercent >= 90) {
+                creditBar.className = 'bg-rose-600 h-full rounded-full transition-all duration-500';
+                badge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800';
+                badge.textContent = 'Crítico';
+            } else if (creditPercent >= 70) {
+                creditBar.className = 'bg-amber-500 h-full rounded-full transition-all duration-500';
+                badge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800';
+                badge.textContent = 'Atenção';
+            } else {
+                creditBar.className = 'bg-brand-600 h-full rounded-full transition-all duration-500';
+                badge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800';
+                badge.textContent = 'Normal';
+            }
+
+            // Recent activity list
+            const recentContainer = document.getElementById('dashboard-recent-list');
+            recentContainer.innerHTML = '';
+
+            if (state.transactions.length === 0) {
+                recentContainer.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">Nenhum lançamento recente registrado.</p>';
+            } else {
+                // Show last 4 items
+                state.transactions.slice(-4).reverse().forEach(t => {
+                    const cat = state.categories.find(c => c.id === t.categoryId) || { name: 'Geral', color: '#64748b' };
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-all';
+                    item.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${cat.color}"></span>
+                            <div>
+                                <p class="font-semibold text-slate-800 text-sm leading-snug">${escapeHTML(t.title)}</p>
+                                <p class="text-xs text-slate-400">${escapeHTML(cat.name)} • ${escapeHTML(t.paymentMethod)}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-slate-800 text-sm">${formatBRL(t.amount)}</p>
+                            <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${t.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+                                ${t.status === 'paid' ? 'Pago' : 'Pendente'}
+                            </span>
+                        </div>
+                    `;
+                    recentContainer.appendChild(item);
+                });
+            }
+        }
+
+        function renderTransactions() {
+            const tableBody = document.getElementById('transactions-table-body');
+            const emptyState = document.getElementById('empty-transactions-state');
+            
+            const searchVal = document.getElementById('filter-search').value.toLowerCase();
+            const statusVal = document.getElementById('filter-status').value;
+            const paymentVal = document.getElementById('filter-payment').value;
+
+            tableBody.innerHTML = '';
+
+            const filtered = state.transactions.filter(t => {
+                const matchesSearch = t.title.toLowerCase().includes(searchVal);
+                const matchesStatus = statusVal === 'all' || t.status === statusVal;
+                const matchesPayment = paymentVal === 'all' || t.paymentMethod === paymentVal;
+                return matchesSearch && matchesStatus && matchesPayment;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                const hasFilters = searchVal || statusVal !== 'all' || paymentVal !== 'all';
+                emptyState.querySelector('p').textContent = hasFilters ? 'Nenhum resultado para esses filtros. Tente alterar a busca ou limpar os filtros.' : 'Você ainda não cadastrou despesas. Selecione “Nova Despesa / Dívida” para começar.';
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filtered.forEach(t => {
+                const cat = state.categories.find(c => c.id === t.categoryId) || { name: 'Sem Categoria', color: '#64748b' };
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-all border-b border-slate-100';
+                
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-800">${escapeHTML(t.title)}</td>
+                    <td class="p-4">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" style="background-color: ${cat.color}15; color: ${cat.color}">
+                            <span class="w-2 h-2 rounded-full" style="background-color: ${cat.color}"></span>
+                            ${escapeHTML(cat.name)}
+                        </span>
+                    </td>
+                    <td class="p-4 text-xs font-medium text-slate-600"><i class="fa-regular fa-credit-card mr-1"></i>${escapeHTML(t.paymentMethod)}</td>
+                    <td class="p-4 text-xs text-slate-600">${formatDateBR(t.dueDate)}</td>
+                    <td class="p-4 font-bold text-slate-800">${formatBRL(t.amount)}</td>
+                    <td class="p-4">
+                        <button onclick="toggleTransactionStatus('${t.id}')" class="px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${t.status === 'paid' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'}">
+                            <i class="fa-solid ${t.status === 'paid' ? 'fa-circle-check' : 'fa-clock'}"></i>
+                            ${t.status === 'paid' ? 'Pago' : 'Pendente'}
+                        </button>
+                    </td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-all" title="Excluir">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function toggleTransactionStatus(id) {
+            const trans = state.transactions.find(t => t.id === id);
+            if (trans) {
+                trans.status = trans.status === 'paid' ? 'pending' : 'paid';
+                saveData();
+                renderAll();
+                showToast(`Status da despesa alterado para: ${trans.status === 'paid' ? 'Pago' : 'Pendente'}`, 'info');
+            }
+        }
+
+        function deleteTransaction(id) {
+            const transaction = state.transactions.find(t => t.id === id);
+            if (!transaction) return;
+            if (!confirm(`Excluir o lançamento “${transaction.title}”? Esta ação não poderá ser desfeita.`)) return;
+            state.transactions = state.transactions.filter(t => t.id !== id);
+            saveData();
+            renderAll();
+            showToast('Lançamento removido com sucesso.', 'warning');
+        }
+
+        function renderCalendar() {
+            const calendarGrid = document.getElementById('calendar-grid');
+            const monthYearTitle = document.getElementById('calendar-month-year');
+            
+            calendarGrid.innerHTML = '';
+
+            const year = state.calendarDate.getFullYear();
+            const month = state.calendarDate.getMonth();
+
+            const monthNames = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+
+            monthYearTitle.textContent = `${monthNames[month]} ${year}`;
+
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Padding empty cells for previous month
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'bg-slate-50/50 rounded-xl border border-slate-100 p-1 min-h-[70px]';
+                calendarGrid.appendChild(emptyCell);
+            }
+
+            // Days cells
+            const today = new Date();
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                // Get transactions for day
+                const dayTrans = state.transactions.filter(t => t.dueDate === dateString);
+
+                const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+
+                const dayCell = document.createElement('div');
+                dayCell.className = `p-2 rounded-xl border border-slate-200 bg-white flex flex-col justify-between min-h-[75px] hover:border-brand-500 cursor-pointer transition-all ${isToday ? 'calendar-day-active bg-brand-50/20' : ''}`;
+                dayCell.onclick = () => openDayDetails(dateString, dayTrans);
+
+                let dotsHTML = '';
+                if (dayTrans.length > 0) {
+                    const hasPending = dayTrans.some(t => t.status === 'pending');
+                    dotsHTML = `
+                        <div class="mt-1 flex flex-col gap-1">
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${hasPending ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'} truncate">
+                                ${dayTrans.length} item(ns)
+                            </span>
+                        </div>
+                    `;
+                }
+
+                dayCell.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold ${isToday ? 'text-brand-600 bg-brand-100 w-5 h-5 flex items-center justify-center rounded-full' : 'text-slate-700'}">${day}</span>
+                        ${dayTrans.length > 0 ? '<i class="fa-solid fa-circle text-[6px] text-brand-500"></i>' : ''}
+                    </div>
+                    ${dotsHTML}
+                `;
+
+                calendarGrid.appendChild(dayCell);
+            }
+        }
+
+        function changeCalendarMonth(delta) {
+            state.calendarDate.setMonth(state.calendarDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function resetCalendarToCurrent() {
+            state.calendarDate = new Date();
+            renderCalendar();
+        }
+
+        function openDayDetails(dateString, transactions) {
+            const detailsPanel = document.getElementById('calendar-day-details');
+            const title = document.getElementById('calendar-detail-date');
+            const list = document.getElementById('calendar-detail-list');
+
+            title.textContent = `Compromissos para ${formatDateBR(dateString)}`;
+            list.innerHTML = '';
+
+            if (transactions.length === 0) {
+                list.innerHTML = '<p class="text-xs text-slate-400">Nenhum vencimento ou dívida para este dia.</p>';
+            } else {
+                transactions.forEach(t => {
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center justify-between p-2.5 bg-slate-800 rounded-lg border border-slate-700';
+                    item.innerHTML = `
+                        <div>
+                            <p class="font-bold text-white">${escapeHTML(t.title)}</p>
+                            <p class="text-xs text-slate-400">${escapeHTML(t.paymentMethod)}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-brand-300">${formatBRL(t.amount)}</p>
+                            <span class="text-[10px] uppercase font-bold ${t.status === 'paid' ? 'text-emerald-400' : 'text-rose-400'}">${t.status === 'paid' ? 'Pago' : 'Pendente'}</span>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            }
+
+            detailsPanel.classList.remove('hidden');
+        }
+
+        function closeDayDetails() {
+            document.getElementById('calendar-day-details').classList.add('hidden');
+        }
+
+        function renderCreditLimitView() {
+            if (!state.currentUser) return;
+
+            const limit = state.currentUser.creditLimit || 0;
+            
+            const cardTransactions = state.transactions.filter(t => t.paymentMethod === 'Cartão de Crédito');
+            const usedAmount = cardTransactions.reduce((acc, t) => acc + t.amount, 0);
+            const pendingAmount = cardTransactions.filter(t => t.status === 'pending').reduce((acc, t) => acc + t.amount, 0);
+            const freeAmount = Math.max(0, limit - usedAmount);
+
+            const percent = limit > 0 ? Math.min(100, (usedAmount / limit) * 100) : 0;
+
+            document.getElementById('credit-gauge-percent').textContent = `${percent.toFixed(1)}%`;
+            document.getElementById('credit-gauge-used').textContent = formatBRL(usedAmount);
+            document.getElementById('credit-gauge-total').textContent = formatBRL(limit);
+            document.getElementById('credit-gauge-free').textContent = formatBRL(freeAmount);
+            document.getElementById('credit-pending-card').textContent = formatBRL(pendingAmount);
+
+            const bar = document.getElementById('credit-gauge-bar');
+            bar.style.width = `${percent}%`;
+
+            const alertBox = document.getElementById('credit-alert-box');
+
+            if (percent >= 90) {
+                bar.className = 'bg-rose-600 h-full rounded-full transition-all duration-700';
+                alertBox.className = 'mt-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-3';
+                alertBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-rose-600 text-lg"></i><span><strong>Alerta Crítico:</strong> Você ultrapassou 90% do seu limite de cartão de crédito. Cuidado com juros de mora!</span>';
+            } else if (percent >= 70) {
+                bar.className = 'bg-amber-500 h-full rounded-full transition-all duration-700';
+                alertBox.className = 'mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-3';
+                alertBox.innerHTML = '<i class="fa-solid fa-circle-exclamation text-amber-600 text-lg"></i><span><strong>Atenção:</strong> Seu uso de cartão atingiu 70% do limite. Evite novas compras parceladas neste ciclo.</span>';
+            } else {
+                bar.className = 'bg-emerald-500 h-full rounded-full transition-all duration-700';
+                alertBox.className = 'mt-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-3';
+                alertBox.innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-600 text-lg"></i><span>Seu limite de cartão de crédito está em um nível seguro de utilização.</span>';
+            }
+        }
+
+        function saveNewCardLimit(e) {
+            e.preventDefault();
+            const val = Number(document.getElementById('input-card-limit').value);
+            if (!Number.isFinite(val) || val < 0) { showToast('Informe um limite válido, igual ou maior que zero.', 'error'); return; }
+            state.currentUser.creditLimit = val;
+            saveData();
+            renderAll();
+            showToast('Limite do cartão atualizado!', 'success');
+        }
+
+        function renderCategories() {
+            const grid = document.getElementById('categories-grid');
+            grid.innerHTML = '';
+
+            state.categories.forEach(cat => {
+                const card = document.createElement('div');
+                card.className = 'p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between';
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold" style="background-color: ${cat.color}">
+                            <i class="fa-solid ${cat.icon || 'fa-tag'}"></i>
+                        </span>
+                        <span class="font-semibold text-slate-800 text-sm">${escapeHTML(cat.name)}</span>
+                    </div>
+                    ${state.categories.length > 1 ? `
+                        <button onclick="deleteCategory('${cat.id}')" class="text-slate-400 hover:text-rose-600 p-1" title="Excluir Categoria">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    ` : ''}
+                `;
+                grid.appendChild(card);
+            });
+
+            // Populate category dropdowns in modal
+            const catSelect = document.getElementById('trans-category');
+            catSelect.innerHTML = '';
+            state.categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.textContent = cat.name;
+                catSelect.appendChild(opt);
+            });
+        }
+
+        function handleAddCategory(e) {
+            e.preventDefault();
+            const name = document.getElementById('cat-name').value.trim();
+            const color = document.getElementById('cat-color').value;
+
+            if (!name) { showToast('Informe um nome para a categoria.', 'error'); return; }
+            if (state.categories.some(cat => cat.name.toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR'))) {
+                showToast('Já existe uma categoria com esse nome. Escolha outro nome.', 'warning'); return;
+            }
+
+            const newCat = {
+                id: 'cat-' + Date.now(),
+                name: name,
+                color: color,
+                icon: 'fa-tag'
+            };
+
+            state.categories.push(newCat);
+            saveData();
+            renderAll();
+            document.getElementById('form-add-category').reset();
+            showToast('Nova categoria criada!', 'success');
+        }
+
+        function deleteCategory(id) {
+            const inUse = state.transactions.some(t => t.categoryId === id);
+            if (inUse) { showToast('Esta categoria está vinculada a lançamentos. Altere a categoria dessas despesas antes de excluí-la.', 'warning'); return; }
+            if (!confirm('Deseja realmente excluir esta categoria?')) return;
+            state.categories = state.categories.filter(c => c.id !== id);
+            saveData();
+            renderAll();
+            showToast('Categoria removida com sucesso.', 'info');
+        }
+
+        function openTransactionModal(defaultPaymentMethod = null) {
+            document.getElementById('form-transaction').reset();
+            
+            // Set default date to today YYYY-MM-DD
+            const now = new Date();
+            const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            document.getElementById('trans-date').value = today;
+
+            if (defaultPaymentMethod) {
+                document.getElementById('trans-payment').value = defaultPaymentMethod;
+            }
+
+            document.getElementById('modal-transaction').classList.remove('hidden');
+        }
+
+        function closeTransactionModal() {
+            document.getElementById('modal-transaction').classList.add('hidden');
+        }
+
+        function handleSaveTransaction(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('trans-title').value.trim();
+            const amount = Number(document.getElementById('trans-amount').value);
+            const dueDate = document.getElementById('trans-date').value;
+            const categoryId = document.getElementById('trans-category').value;
+            const paymentMethod = document.getElementById('trans-payment').value;
+            const status = document.querySelector('input[name="trans-status"]:checked').value;
+
+            if (!title || !Number.isFinite(amount) || amount <= 0 || !dueDate || !categoryId || !paymentMethod) {
+                showToast('Confira os campos: informe descrição, valor maior que zero, vencimento, categoria e forma de pagamento.', 'error');
+                return;
+            }
+
+            const newTrans = {
+                id: 't-' + Date.now(),
+                title,
+                amount,
+                dueDate,
+                categoryId,
+                paymentMethod,
+                status
+            };
+
+            state.transactions.push(newTrans);
+            saveData();
+            renderAll();
+            closeTransactionModal();
+            showToast('Despesa / Dívida cadastrada com sucesso!', 'success');
+        }
+
+        function openIncomeModal() {
+            if (state.currentUser) {
+                document.getElementById('input-modal-income').value = state.currentUser.income || 0;
+            }
+            document.getElementById('modal-income').classList.remove('hidden');
+        }
+
+        function closeIncomeModal() {
+            document.getElementById('modal-income').classList.add('hidden');
+        }
+
+        function handleSaveIncome(e) {
+            e.preventDefault();
+            const newIncome = Number(document.getElementById('input-modal-income').value);
+            if (!Number.isFinite(newIncome) || newIncome < 0) { showToast('Informe uma renda válida, igual ou maior que zero.', 'error'); return; }
+            state.currentUser.income = newIncome;
+            saveData();
+            renderAll();
+            closeIncomeModal();
+            showToast('Renda mensal atualizada!', 'success');
+        }
+    </script>
+</body>
+</html>
